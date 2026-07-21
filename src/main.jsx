@@ -212,7 +212,7 @@ function Products({ user, navigate, notify }) {
   const load = useCallback(
     async (page = 0) => {
       try {
-        const q = new URLSearchParams({ page, size: 24, sort: "id,asc" });
+        const q = new URLSearchParams({ page, size: 10, sort: "id,asc" });
         if (filter.search) q.set("search", filter.search);
         if (filter.categoryId) q.set("categoryId", filter.categoryId);
         const d = await api(`/api/products?${q}`);
@@ -600,6 +600,7 @@ function Orders() {
 
 function Account({ user, setUser, navigate }) {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "" }),
+    [showPasswordForm, setShowPasswordForm] = useState(false),
     [notice, show] = useNotice();
   const set = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const action = async (path, text) => {
@@ -615,8 +616,12 @@ function Account({ user, setUser, navigate }) {
     }
   };
   return (
-    <div className="columns">
-      <Panel title="Hesabım" sub={`${user.username} · ${user.role}`}>
+    <div className="account-layout">
+      <Panel
+        title="Hesabım"
+        sub="Profil bilgilerin ve güvenlik seçeneklerin."
+        className="account-panel"
+      >
         <Notice value={notice} />
         <div className="profile-card">
           <div>{user.username.slice(0, 1).toUpperCase()}</div>
@@ -629,57 +634,84 @@ function Account({ user, setUser, navigate }) {
             </small>
           </span>
         </div>
-        <div className="stack">
+        <div className="account-actions">
           <button
-            className="danger"
+            className="account-action"
+            onClick={() => setShowPasswordForm((visible) => !visible)}
+          >
+            <span className="action-icon">⌁</span>
+            <span>
+              <b>Parolamı değiştir</b>
+              <small>Mevcut parolanı doğrulayarak yeni parola belirle</small>
+            </span>
+            <strong>{showPasswordForm ? "−" : "›"}</strong>
+          </button>
+          <button
+            className="account-action danger-action"
             onClick={() =>
               action("/api/auth/logout-all", "Tüm oturumlar kapatıldı.")
             }
           >
-            Tüm cihazlardan çık
+            <span className="action-icon">↪</span>
+            <span>
+              <b>Tüm cihazlardan çık</b>
+              <small>Açık olan bütün oturumlarını güvenle kapat</small>
+            </span>
+            <strong>›</strong>
           </button>
         </div>
       </Panel>
-      <Panel title="Parola değiştir" sub="İşlem sonrası tüm oturumlar kapanır.">
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            try {
-              show(
-                (
-                  await api("/api/auth/change-password", {
-                    method: "POST",
-                    body: JSON.stringify(form),
-                  })
-                ).message,
-              );
-              setUser(null);
-              setTimeout(() => navigate("/login"), 800);
-            } catch (x) {
-              show(x.message, "error");
-            }
-          }}
+      {showPasswordForm && (
+        <Panel
+          title="Parola değiştir"
+          sub="İşlem tamamlandığında güvenliğin için tüm oturumların kapanır."
+          className="password-panel"
         >
-          <Field
-            label="Mevcut parola"
-            name="currentPassword"
-            type="password"
-            value={form.currentPassword}
-            onChange={set}
-            required
-          />
-          <Field
-            label="Yeni parola"
-            name="newPassword"
-            type="password"
-            minLength="8"
-            value={form.newPassword}
-            onChange={set}
-            required
-          />
-          <button className="primary">Değiştir</button>
-        </form>
-      </Panel>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                show(
+                  (
+                    await api("/api/auth/change-password", {
+                      method: "POST",
+                      body: JSON.stringify(form),
+                    })
+                  ).message,
+                );
+                setUser(null);
+                setTimeout(() => navigate("/login"), 800);
+              } catch (x) {
+                show(x.message, "error");
+              }
+            }}
+          >
+            <Field
+              label="Mevcut parola"
+              name="currentPassword"
+              type="password"
+              value={form.currentPassword}
+              onChange={set}
+              required
+            />
+            <Field
+              label="Yeni parola"
+              name="newPassword"
+              type="password"
+              minLength="8"
+              value={form.newPassword}
+              onChange={set}
+              required
+            />
+            <div className="form-actions">
+              <button type="button" onClick={() => setShowPasswordForm(false)}>
+                Vazgeç
+              </button>
+              <button className="primary">Parolayı güncelle</button>
+            </div>
+          </form>
+        </Panel>
+      )}
     </div>
   );
 }
@@ -1012,29 +1044,58 @@ export function App() {
       )}
       <header>
         <button className="brand" onClick={() => navigate("/products")}>
-          <b>n11 clone</b>
+          <b>n11</b>
           <span>by İhsan</span>
         </button>
         <nav>
-          <button onClick={() => navigate("/products")}>Ürünler</button>
+          <button
+            className={path === "/products" ? "active" : ""}
+            onClick={() => navigate("/products")}
+          >
+            Ürünler
+          </button>
           {user && (
             <>
-              <button onClick={() => navigate("/cart")}>Sepet</button>
-              <button onClick={() => navigate("/orders")}>Siparişler</button>
-              <button onClick={() => navigate("/account")}>Hesabım</button>
+              <button
+                className={path === "/cart" ? "active" : ""}
+                onClick={() => navigate("/cart")}
+              >
+                Sepet
+              </button>
+              <button
+                className={path === "/orders" ? "active" : ""}
+                onClick={() => navigate("/orders")}
+              >
+                Siparişler
+              </button>
             </>
           )}
           {user?.role === "ADMIN" && (
-            <button onClick={() => navigate("/admin")}>Yönetim</button>
+            <button
+              className={path === "/admin" ? "active" : ""}
+              onClick={() => navigate("/admin")}
+            >
+              Yönetim
+            </button>
           )}
         </nav>
         <div className="session">
           {user ? (
             <>
-              <span>
-                <b>{user.username}</b> · {user.role}
-              </span>
-              <button onClick={logout}>Çıkış</button>
+              <button
+                className={`account-menu ${path === "/account" ? "active" : ""}`}
+                aria-label="Hesabım"
+                onClick={() => navigate("/account")}
+              >
+                <span>{user.username.slice(0, 1).toUpperCase()}</span>
+                <div>
+                  <b>Hesabım</b>
+                  <small>{user.username}</small>
+                </div>
+              </button>
+              <button className="logout-button" onClick={logout}>
+                Çıkış
+              </button>
             </>
           ) : (
             <button
@@ -1048,7 +1109,7 @@ export function App() {
       </header>
       <main>{page}</main>
       <footer>
-        <b>n11 clone · İhsan</b>
+        <b>n11 · İhsan</b>
         <span>Sevgiyle tasarlandı · 2026</span>
       </footer>
     </div>
