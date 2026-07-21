@@ -81,8 +81,36 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Hesabım" }));
     expect(
+      screen.queryByRole("heading", { name: "Parola değiştir" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Parolamı değiştir/ }));
+    expect(
       await screen.findByRole("heading", { name: "Parola değiştir" }),
     ).toBeInTheDocument();
+  });
+
+  it("loads at most ten products per page and requests the next page", async () => {
+    const user = userEvent.setup();
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products"))
+        return Promise.resolve({
+          content: [],
+          page: { number: path.includes("page=1") ? 1 : 0, totalPages: 2 },
+        });
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(expect.stringMatching(/size=10/)),
+    );
+    await user.click(screen.getByRole("button", { name: "Sonraki" }));
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(expect.stringMatching(/page=1/)),
+    );
   });
 
   it("shows management pages only to admins", async () => {

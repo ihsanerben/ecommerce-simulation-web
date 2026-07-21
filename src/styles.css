@@ -650,3 +650,368 @@ footer b {
     align-items: center;
   }
 }
+
+/* Refined storefront experience */
+:root {
+  --pink: #e52f7f;
+  --pink-dark: #b8175f;
+  --pink-soft: #fff0f6;
+  --ink: #2d2028;
+  --muted: #7e7079;
+  --line: #efdee6;
+  --surface: rgba(255, 255, 255, 0.94);
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 8% 8%, #ffe1ee 0, transparent 24%),
+    radial-gradient(circle at 92% 22%, #f2e7ff 0, transparent 25%), #fff9fc;
+}
+
+header {
+  min-height: 76px;
+  gap: 42px;
+  padding-inline: max(24px, calc((100vw - 1320px) / 2));
+  background: rgba(255, 255, 255, 0.93);
+  border-bottom: 1px solid rgba(231, 203, 217, 0.75);
+  box-shadow: 0 8px 34px rgba(92, 31, 62, 0.06);
+}
+
+.brand b {
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.brand span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--pink-soft);
+  color: var(--pink-dark);
+  font-weight: 700;
+}
+
+nav {
+  align-self: stretch;
+  align-items: center;
+  gap: 8px;
+}
+
+nav button {
+  position: relative;
+  height: 100%;
+  padding-inline: 14px;
+  border-radius: 0;
+  font-weight: 600;
+}
+
+nav button:hover,
+nav button.active {
+  background: transparent;
+  color: var(--pink-dark);
+}
+
+nav button.active::after {
+  position: absolute;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--pink);
+  content: "";
+}
+
+.session {
+  margin-left: auto;
+}
+
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 128px;
+  padding: 7px 11px 7px 8px;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+
+.account-menu:hover,
+.account-menu.active {
+  border-color: #f0cfdf;
+  background: var(--pink-soft);
+}
+
+.account-menu > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f34b95, #c71d6b);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.account-menu div {
+  display: grid;
+  line-height: 1.15;
+}
+
+.account-menu small {
+  max-width: 90px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.logout-button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+main {
+  width: min(1320px, calc(100% - 40px));
+  padding-block: 42px 56px;
+}
+
+.panel {
+  border-color: rgba(235, 216, 225, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 20px 55px rgba(80, 35, 60, 0.07);
+}
+
+.panel-head h1 {
+  font-size: clamp(25px, 3vw, 32px);
+}
+
+.filters {
+  padding: 12px;
+  border: 1px solid #f1e2e9;
+  border-radius: 15px;
+  background: #fffafd;
+}
+
+.filters input,
+.filters select {
+  background: #fff;
+}
+
+.product-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.product {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #fffbfd);
+}
+
+.product-art {
+  height: 180px;
+  margin: -16px -16px 7px;
+  border-radius: 18px 18px 0 0;
+}
+
+.product h3 {
+  min-height: 45px;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.product > div:last-child button {
+  flex: 1;
+}
+
+.pager {
+  width: fit-content;
+  margin: 30px auto 0;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(84, 33, 60, 0.08);
+}
+
+.pager span {
+  min-width: 68px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.account-layout {
+  width: min(820px, 100%);
+  margin-inline: auto;
+}
+
+.account-panel {
+  padding: clamp(24px, 5vw, 42px);
+}
+
+.profile-card {
+  margin-bottom: 24px;
+  padding: 22px;
+  border: 1px solid #f3dce7;
+  border-radius: 18px;
+}
+
+.profile-card > div {
+  width: 58px;
+  height: 58px;
+}
+
+.account-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.account-action {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 15px;
+  padding: 17px;
+  border-color: var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  background: #fff;
+  text-align: left;
+}
+
+.account-action:hover {
+  border-color: #e9a9c8;
+  background: #fff8fb;
+  transform: translateY(-1px);
+}
+
+.account-action > span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.account-action small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.account-action strong {
+  color: var(--pink);
+  font-size: 25px;
+}
+
+.action-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--pink-soft);
+  color: var(--pink-dark);
+  font-size: 21px;
+}
+
+.danger-action .action-icon {
+  background: #fff0f0;
+  color: #a52e37;
+}
+
+.password-panel {
+  animation: panel-in 0.24s ease-out;
+}
+
+.password-panel form {
+  max-width: 560px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.order,
+.row,
+.mini-list > div {
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(74, 31, 55, 0.04);
+}
+
+.modal > div {
+  border: 1px solid #f1dce6;
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(38, 15, 27, 0.25);
+}
+
+@media (max-width: 1180px) {
+  .product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  header {
+    padding-inline: 20px;
+  }
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .session {
+    margin-left: auto;
+  }
+  nav button {
+    height: 44px;
+  }
+}
+
+@media (max-width: 600px) {
+  main {
+    width: min(100% - 24px, 1320px);
+    padding-top: 24px;
+  }
+  header {
+    gap: 12px;
+  }
+  .account-menu {
+    min-width: 0;
+  }
+  .account-menu div,
+  .logout-button {
+    display: none;
+  }
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+  .product-art {
+    height: 260px;
+  }
+  .filters {
+    padding: 10px;
+  }
+  .account-action small {
+    font-size: 11px;
+  }
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  .form-actions button {
+    width: 100%;
+  }
+}
