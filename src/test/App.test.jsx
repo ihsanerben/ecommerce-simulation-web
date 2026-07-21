@@ -113,6 +113,73 @@ describe("page navigation", () => {
     );
   });
 
+  it("shows the product name in the add-to-cart notification", async () => {
+    const user = userEvent.setup();
+    const product = {
+      id: 7,
+      name: "Akıllı Saat Fit",
+      description: "Günlük aktivite takibi",
+      price: 1699,
+      stockQuantity: 8,
+      category: { name: "Elektronik" },
+    };
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me")
+        return Promise.resolve({ username: "ihsan", role: "USER" });
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products"))
+        return Promise.resolve({
+          content: [product],
+          page: { number: 0, totalPages: 1 },
+        });
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    await user.click(
+      await screen.findByRole("button", { name: "Sepete ekle" }),
+    );
+
+    expect(
+      await screen.findByText("Akıllı Saat Fit sepete eklendi."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the product name and quantity change in cart notifications", async () => {
+    const user = userEvent.setup();
+    const cart = {
+      id: 1,
+      totalPrice: 1699,
+      items: [
+        {
+          id: 11,
+          quantity: 1,
+          product: { name: "Akıllı Saat Fit", price: 1699 },
+        },
+      ],
+    };
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me")
+        return Promise.resolve({ username: "ihsan", role: "USER" });
+      if (path === "/api/cart") return Promise.resolve(cart);
+      if (path === "/api/cart/items/11")
+        return Promise.resolve({
+          ...cart,
+          items: [{ ...cart.items[0], quantity: 2 }],
+          totalPrice: 3398,
+        });
+      return Promise.resolve(null);
+    });
+    history.replaceState({}, "", "/cart");
+
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "+" }));
+
+    expect(
+      await screen.findByText("Akıllı Saat Fit +1 · Sepet güncellendi."),
+    ).toBeInTheDocument();
+  });
+
   it("shows management pages only to admins", async () => {
     const user = userEvent.setup();
     mockUser("ADMIN");

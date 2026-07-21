@@ -37,19 +37,6 @@ const productImages = [
 const productImage = (p) =>
   productImages[Math.abs(Number(p.id) || 0) % productImages.length];
 
-function Notice({ value }) {
-  return (
-    value && (
-      <div className={`notice ${value.type || "ok"}`}>
-        {value.text || value}
-      </div>
-    )
-  );
-}
-function useNotice() {
-  const [n, setN] = useState(null);
-  return [n, (text, type = "ok") => setN({ text, type })];
-}
 function Field({ label, ...props }) {
   return (
     <label>
@@ -62,14 +49,13 @@ function Empty({ children }) {
   return <div className="empty-state">{children}</div>;
 }
 
-function AuthForm({ mode, navigate, reloadUser }) {
+function AuthForm({ mode, navigate, reloadUser, notify }) {
   const [form, setForm] = useState({
     username: "",
     email: "",
     password: "",
     newPassword: "",
   });
-  const [notice, show] = useNotice();
   const set = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const submit = async (e) => {
     e.preventDefault();
@@ -83,6 +69,7 @@ function AuthForm({ mode, navigate, reloadUser }) {
           }),
         });
         await reloadUser();
+        notify(`Hoş geldin ${form.username}! Giriş başarılı.`);
         navigate("/products");
       }
       if (mode === "register") {
@@ -95,10 +82,11 @@ function AuthForm({ mode, navigate, reloadUser }) {
           }),
         });
         await reloadUser();
+        notify(`Hoş geldin ${form.username}! Hesabın oluşturuldu.`);
         navigate("/products");
       }
       if (mode === "forgot")
-        show(
+        notify(
           (
             await api("/api/auth/forgot-password", {
               method: "POST",
@@ -109,7 +97,7 @@ function AuthForm({ mode, navigate, reloadUser }) {
       if (mode === "reset") {
         const token = new URLSearchParams(location.search).get("token");
         if (!token) throw Error("Reset token bulunamadı.");
-        show(
+        notify(
           (
             await api("/api/auth/reset-password", {
               method: "POST",
@@ -120,7 +108,7 @@ function AuthForm({ mode, navigate, reloadUser }) {
         setTimeout(() => navigate("/login"), 1000);
       }
     } catch (err) {
-      show(err.message, "error");
+      notify(err.message, "error");
     }
   };
   const title = {
@@ -173,7 +161,6 @@ function AuthForm({ mode, navigate, reloadUser }) {
             required
           />
         )}
-        <Notice value={notice} />
         <button className="primary">Devam et</button>
       </form>
       <div className="form-links">
@@ -207,8 +194,7 @@ function Products({ user, navigate, notify }) {
     [categories, setCategories] = useState([]),
     [meta, setMeta] = useState({ page: 0, totalPages: 1 });
   const [filter, setFilter] = useState({ search: "", categoryId: "" }),
-    [detail, setDetail] = useState(null),
-    [notice, show] = useNotice();
+    [detail, setDetail] = useState(null);
   const load = useCallback(
     async (page = 0) => {
       try {
@@ -222,7 +208,7 @@ function Products({ user, navigate, notify }) {
           totalPages: d.page?.totalPages || 1,
         });
       } catch (e) {
-        show(e.message, "error");
+        notify(e.message, "error");
       }
     },
     [filter],
@@ -230,17 +216,17 @@ function Products({ user, navigate, notify }) {
   useEffect(() => {
     api("/api/categories")
       .then(setCategories)
-      .catch((e) => show(e.message, "error"));
+      .catch((e) => notify(e.message, "error"));
     load();
   }, [load]);
-  const add = async (id) => {
+  const add = async (product) => {
     if (!user) return navigate("/login");
     try {
       await api("/api/cart/items", {
         method: "POST",
-        body: JSON.stringify({ productId: id, quantity: 1 }),
+        body: JSON.stringify({ productId: product.id, quantity: 1 }),
       });
-      notify("Ürün sepete eklendi 🛍️");
+      notify(`${product.name} sepete eklendi.`);
     } catch (e) {
       notify(e.message, "error");
     }
@@ -288,7 +274,6 @@ function Products({ user, navigate, notify }) {
           </select>
           <button onClick={() => load(0)}>Ara</button>
         </div>
-        <Notice value={notice} />
         <div className="product-grid">
           {products.map((p) => (
             <article className="product" key={p.id}>
@@ -311,7 +296,7 @@ function Products({ user, navigate, notify }) {
                 <button
                   className="primary small"
                   disabled={!p.stockQuantity}
-                  onClick={() => add(p.id)}
+                  onClick={() => add(p)}
                 >
                   Sepete ekle
                 </button>
@@ -359,13 +344,12 @@ function Products({ user, navigate, notify }) {
   );
 }
 
-function Cart({ navigate }) {
-  const [cart, setCart] = useState(null),
-    [notice, show] = useNotice();
+function Cart({ navigate, notify }) {
+  const [cart, setCart] = useState(null);
   const load = () =>
     api("/api/cart")
       .then(setCart)
-      .catch((e) => show(e.message, "error"));
+      .catch((e) => notify(e.message, "error"));
   useEffect(() => {
     load();
   }, []);
@@ -374,17 +358,12 @@ function Cart({ navigate }) {
       const d = await api(path, options);
       if (d) setCart(d);
       else load();
-      show(message);
+      notify(message);
     } catch (e) {
-      show(e.message, "error");
+      notify(e.message, "error");
     }
   };
-  if (!cart)
-    return (
-      <Panel title="Sepet">
-        <Notice value={notice} />
-      </Panel>
-    );
+  if (!cart) return <Panel title="Sepet" />;
   return (
     <Panel
       title="Sepetim"
@@ -400,7 +379,6 @@ function Cart({ navigate }) {
         </button>
       }
     >
-      <Notice value={notice} />
       {!cart.items.length ? (
         <Empty>
           Sepetin boş.{" "}
@@ -427,7 +405,7 @@ function Cart({ navigate }) {
                           method: "PUT",
                           body: JSON.stringify({ quantity: i.quantity - 1 }),
                         },
-                        "Adet güncellendi.",
+                        `${i.product.name} −1 · Sepet güncellendi.`,
                       )
                     }
                   >
@@ -442,7 +420,7 @@ function Cart({ navigate }) {
                           method: "PUT",
                           body: JSON.stringify({ quantity: i.quantity + 1 }),
                         },
-                        "Adet güncellendi.",
+                        `${i.product.name} +1 · Sepet güncellendi.`,
                       )
                     }
                   >
@@ -456,7 +434,7 @@ function Cart({ navigate }) {
                     act(
                       `/api/cart/items/${i.id}`,
                       { method: "DELETE" },
-                      "Ürün kaldırıldı.",
+                      `${i.product.name} sepetten kaldırıldı.`,
                     )
                   }
                 >
@@ -472,9 +450,10 @@ function Cart({ navigate }) {
               onClick={async () => {
                 try {
                   await api("/api/orders", { method: "POST" });
+                  notify("Siparişin başarıyla oluşturuldu.");
                   navigate("/orders");
                 } catch (e) {
-                  show(e.message, "error");
+                  notify(e.message, "error");
                 }
               }}
             >
@@ -487,25 +466,24 @@ function Cart({ navigate }) {
   );
 }
 
-function Orders() {
+function Orders({ notify }) {
   const [orders, setOrders] = useState([]),
     [detail, setDetail] = useState(null),
-    [approvedOrder, setApprovedOrder] = useState(null),
-    [notice, show] = useNotice();
+    [approvedOrder, setApprovedOrder] = useState(null);
   const load = () =>
     api("/api/orders")
       .then(setOrders)
-      .catch((e) => show(e.message, "error"));
+      .catch((e) => notify(e.message, "error"));
   useEffect(() => {
     load();
   }, []);
   const cancel = async (id) => {
     try {
       await api(`/api/orders/${id}/cancel`, { method: "POST" });
-      show("Sipariş iptal edildi.");
+      notify(`#${id} numaralı sipariş iptal edildi.`, "danger");
       load();
     } catch (e) {
-      show(e.message, "error");
+      notify(e.message, "error");
     }
   };
   const approve = async (id) => {
@@ -514,9 +492,10 @@ function Orders() {
         method: "POST",
       });
       setApprovedOrder(approved);
+      notify(`#${id} numaralı sipariş onaylandı.`);
       load();
     } catch (e) {
-      show(e.message, "error");
+      notify(e.message, "error");
     }
   };
   return (
@@ -524,7 +503,6 @@ function Orders() {
       title="Siparişlerim"
       sub="Sipariş onayı, detayları ve iptal işlemleri."
     >
-      <Notice value={notice} />
       {!orders.length ? (
         <Empty>Henüz sipariş yok.</Empty>
       ) : (
@@ -598,21 +576,20 @@ function Orders() {
   );
 }
 
-function Account({ user, setUser, navigate }) {
+function Account({ user, setUser, navigate, notify }) {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "" }),
-    [showPasswordForm, setShowPasswordForm] = useState(false),
-    [notice, show] = useNotice();
+    [showPasswordForm, setShowPasswordForm] = useState(false);
   const set = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const action = async (path, text) => {
     try {
       await api(path, { method: "POST" });
-      show(text);
+      notify(text, path.includes("logout-all") ? "danger" : "ok");
       if (path.includes("logout-all")) {
         setUser(null);
         navigate("/login");
       }
     } catch (e) {
-      show(e.message, "error");
+      notify(e.message, "error");
     }
   };
   return (
@@ -622,7 +599,6 @@ function Account({ user, setUser, navigate }) {
         sub="Profil bilgilerin ve güvenlik seçeneklerin."
         className="account-panel"
       >
-        <Notice value={notice} />
         <div className="profile-card">
           <div>{user.username.slice(0, 1).toUpperCase()}</div>
           <span>
@@ -671,7 +647,7 @@ function Account({ user, setUser, navigate }) {
             onSubmit={async (e) => {
               e.preventDefault();
               try {
-                show(
+                notify(
                   (
                     await api("/api/auth/change-password", {
                       method: "POST",
@@ -682,7 +658,7 @@ function Account({ user, setUser, navigate }) {
                 setUser(null);
                 setTimeout(() => navigate("/login"), 800);
               } catch (x) {
-                show(x.message, "error");
+                notify(x.message, "error");
               }
             }}
           >
@@ -716,7 +692,7 @@ function Account({ user, setUser, navigate }) {
   );
 }
 
-function Admin() {
+function Admin({ notify }) {
   const blankP = {
       name: "",
       description: "",
@@ -731,8 +707,7 @@ function Admin() {
     [cf, setCf] = useState(blankC),
     [editP, setEditP] = useState(null),
     [editC, setEditC] = useState(null),
-    [order, setOrder] = useState({ id: "", status: "PAID" }),
-    [notice, show] = useNotice();
+    [order, setOrder] = useState({ id: "", status: "PAID" });
   const load = async () => {
     try {
       setCategories(await api("/api/categories"));
@@ -740,7 +715,7 @@ function Admin() {
         (await api("/api/products?size=100&sort=id,asc")).content || [],
       );
     } catch (e) {
-      show(e.message, "error");
+      notify(e.message, "error");
     }
   };
   useEffect(() => {
@@ -749,10 +724,10 @@ function Admin() {
   const run = async (path, method, body, message) => {
     try {
       await api(path, { method, body: body && JSON.stringify(body) });
-      show(message);
+      notify(message);
       load();
     } catch (e) {
-      show(e.message, "error");
+      notify(e.message, "error");
     }
   };
   const productBody = {
@@ -763,7 +738,6 @@ function Admin() {
   };
   return (
     <>
-      <Notice value={notice} />
       <div className="columns">
         <Panel title="Kategori yönetimi">
           <form
@@ -1001,14 +975,19 @@ export function App() {
       path === "/products" ? (
         <Products user={user} navigate={navigate} notify={notify} />
       ) : path === "/cart" ? (
-        <Cart navigate={navigate} />
+        <Cart navigate={navigate} notify={notify} />
       ) : path === "/orders" ? (
-        <Orders />
+        <Orders notify={notify} />
       ) : path === "/account" ? (
-        <Account user={user} setUser={setUser} navigate={navigate} />
+        <Account
+          user={user}
+          setUser={setUser}
+          navigate={navigate}
+          notify={notify}
+        />
       ) : path === "/admin" ? (
         user?.role === "ADMIN" ? (
-          <Admin />
+          <Admin notify={notify} />
         ) : (
           <Empty>Bu alan yalnızca ADMIN rolüne açıktır.</Empty>
         )
@@ -1024,6 +1003,7 @@ export function App() {
           }
           navigate={navigate}
           reloadUser={reloadUser}
+          notify={notify}
         />
       );
   const logout = async () => {
@@ -1032,13 +1012,16 @@ export function App() {
     } finally {
       setUser(null);
       navigate("/products");
+      notify("Oturumun güvenle kapatıldı.", "danger");
     }
   };
   return (
     <div>
       {toast && (
         <div className={`toast ${toast.type}`}>
-          <span>{toast.type === "error" ? "!" : "✓"}</span>
+          <span>
+            {toast.type === "error" ? "!" : toast.type === "danger" ? "↪" : "✓"}
+          </span>
           {toast.text}
         </div>
       )}
