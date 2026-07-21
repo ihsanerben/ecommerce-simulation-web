@@ -589,8 +589,9 @@ function Account({ user, setUser, navigate, notify }) {
   const action = async (path, text) => {
     try {
       await api(path, { method: "POST" });
-      notify(text, path.includes("logout-all") ? "danger" : "ok");
-      if (path.includes("logout-all")) {
+      const isLogout = path.includes("/logout");
+      notify(text, isLogout ? "danger" : "ok");
+      if (isLogout) {
         setUser(null);
         navigate("/login");
       }
@@ -627,6 +628,19 @@ function Account({ user, setUser, navigate, notify }) {
               <small>Mevcut parolanı doğrulayarak yeni parola belirle</small>
             </span>
             <strong>{showPasswordForm ? "−" : "›"}</strong>
+          </button>
+          <button
+            className="account-action danger-action mobile-account-logout"
+            onClick={() =>
+              action("/api/auth/logout", "Bu cihazdaki oturumun kapatıldı.")
+            }
+          >
+            <span className="action-icon">↪</span>
+            <span>
+              <b>Bu cihazdan çık</b>
+              <small>Yalnızca bu telefondaki oturumunu kapat</small>
+            </span>
+            <strong>›</strong>
           </button>
           <button
             className="account-action danger-action"

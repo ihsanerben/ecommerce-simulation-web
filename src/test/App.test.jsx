@@ -89,6 +89,25 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
+  it("logs out only the current device from the account actions", async () => {
+    const user = userEvent.setup();
+    mockUser();
+    history.replaceState({}, "", "/account");
+
+    render(<App />);
+    await user.click(
+      await screen.findByRole("button", { name: /Bu cihazdan çık/ }),
+    );
+
+    expect(api).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
+    expect(
+      await screen.findByText("Bu cihazdaki oturumun kapatıldı."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Giriş yap" }),
+    ).toBeInTheDocument();
+  });
+
   it("loads at most ten products per page and requests the next page", async () => {
     const user = userEvent.setup();
     api.mockImplementation((path) => {

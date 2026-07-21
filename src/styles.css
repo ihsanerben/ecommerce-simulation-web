@@ -967,6 +967,10 @@ main {
   color: #a52e37;
 }
 
+.mobile-account-logout {
+  display: none;
+}
+
 .password-panel {
   animation: panel-in 0.24s ease-out;
 }
@@ -1167,7 +1171,9 @@ img {
   }
 
   .brand span {
-    display: none;
+    display: inline-flex;
+    padding: 2px 5px;
+    font-size: 10px;
   }
 
   nav {
@@ -1199,18 +1205,11 @@ img {
   }
 
   .logout-button {
-    min-height: 38px;
-    display: inline-flex;
-    padding: 6px 9px;
-    border: 1px solid #f0cdd1;
-    background: #fff5f5;
-    color: #a52e37;
-    font-size: 12px;
+    display: none;
   }
 
-  .logout-icon {
-    display: inline;
-    font-size: 16px;
+  .mobile-account-logout {
+    display: grid;
   }
 
   main {
@@ -1498,16 +1497,6 @@ img {
   }
 
   .account-action > strong {
-    display: none;
-  }
-
-  .logout-button {
-    width: 38px;
-    justify-content: center;
-    padding: 5px;
-  }
-
-  .logout-text {
     display: none;
   }
 }
