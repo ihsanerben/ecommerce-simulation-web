@@ -145,6 +145,41 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
+  it("warns guests before redirecting them to login from add to cart", async () => {
+    const user = userEvent.setup();
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products"))
+        return Promise.resolve({
+          content: [
+            {
+              id: 7,
+              name: "Akıllı Saat Fit",
+              price: 1699,
+              stockQuantity: 8,
+              category: { name: "Elektronik" },
+            },
+          ],
+          page: { number: 0, totalPages: 1 },
+        });
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    await user.click(
+      await screen.findByRole("button", { name: "Sepete ekle" }),
+    );
+
+    expect(
+      await screen.findByText("Sepete ürün eklemek için giriş yapmalısınız."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Giriş yap" }),
+    ).toBeInTheDocument();
+    expect(api).not.toHaveBeenCalledWith("/api/cart/items", expect.anything());
+  });
+
   it("shows the product name and quantity change in cart notifications", async () => {
     const user = userEvent.setup();
     const cart = {

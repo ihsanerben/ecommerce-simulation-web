@@ -806,9 +806,16 @@ nav button.active::after {
 }
 
 .logout-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border-color: transparent;
   background: transparent;
   color: var(--muted);
+}
+
+.logout-icon {
+  display: none;
 }
 
 main {
@@ -1187,9 +1194,23 @@ img {
     height: 36px;
   }
 
-  .account-menu div,
-  .logout-button {
+  .account-menu div {
     display: none;
+  }
+
+  .logout-button {
+    min-height: 38px;
+    display: inline-flex;
+    padding: 6px 9px;
+    border: 1px solid #f0cdd1;
+    background: #fff5f5;
+    color: #a52e37;
+    font-size: 12px;
+  }
+
+  .logout-icon {
+    display: inline;
+    font-size: 16px;
   }
 
   main {
@@ -1249,25 +1270,58 @@ img {
     width: 100%;
   }
 
-  .product-grid,
   .order-grid,
   .columns,
   .product-form {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .product {
+    gap: 6px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
   .product-art {
-    height: min(70vw, 310px);
+    height: min(34vw, 150px);
+    margin: -10px -10px 5px;
+    border-radius: 14px 14px 0 0;
   }
 
   .product h3 {
     min-height: auto;
-    font-size: 18px;
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  .product p {
+    display: none;
+  }
+
+  .product > b {
+    font-size: 16px;
+  }
+
+  .product small,
+  .product > span {
+    font-size: 11px;
   }
 
   .product > div:last-child {
     display: grid;
-    grid-template-columns: 1fr 1.35fr;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .product > div:last-child button {
+    min-height: 38px;
+    padding: 7px 5px;
+    font-size: 12px;
   }
 
   .pager {
@@ -1427,11 +1481,12 @@ img {
   }
 
   .product {
-    padding: 14px;
+    padding: 9px;
   }
 
   .product-art {
-    margin: -14px -14px 7px;
+    height: 125px;
+    margin: -9px -9px 5px;
   }
 
   .product > div:last-child {
@@ -1443,6 +1498,16 @@ img {
   }
 
   .account-action > strong {
+    display: none;
+  }
+
+  .logout-button {
+    width: 38px;
+    justify-content: center;
+    padding: 5px;
+  }
+
+  .logout-text {
     display: none;
   }
 }
