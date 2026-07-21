@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import "./styles.css";
+import n11Logo from "../n11_photos/logo1.jpg";
+import n11Cover from "../n11_photos/Cover Banner 2.jpg";
 
 const money = (v) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(
@@ -233,7 +235,7 @@ function Products({ user, navigate, notify }) {
   };
   return (
     <>
-      <section className="hero">
+      <section className="hero" style={{ "--hero-cover": `url(${n11Cover})` }}>
         <div>
           <span>İHSAN'IN SEÇİMLERİ</span>
           <h1>
@@ -1027,7 +1029,7 @@ export function App() {
       )}
       <header>
         <button className="brand" onClick={() => navigate("/products")}>
-          <b>n11</b>
+          <img className="brand-logo" src={n11Logo} alt="n11" />
           <span>by İhsan</span>
         </button>
         <nav>
