@@ -222,7 +222,11 @@ function Products({ user, navigate, notify }) {
     load();
   }, [load]);
   const add = async (product) => {
-    if (!user) return navigate("/login");
+    if (!user) {
+      notify("Sepete ürün eklemek için giriş yapmalısınız.", "danger");
+      navigate("/login");
+      return;
+    }
     try {
       await api("/api/cart/items", {
         method: "POST",
@@ -1078,8 +1082,13 @@ export function App() {
                   <small>{user.username}</small>
                 </div>
               </button>
-              <button className="logout-button" onClick={logout}>
-                Çıkış
+              <button
+                className="logout-button"
+                aria-label="Çıkış yap"
+                onClick={logout}
+              >
+                <span className="logout-icon">↪</span>
+                <span className="logout-text">Çıkış</span>
               </button>
             </>
           ) : (
