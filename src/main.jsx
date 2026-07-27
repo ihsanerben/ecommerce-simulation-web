@@ -517,8 +517,20 @@ function Orders({ notify }) {
             <article className="order" key={o.id}>
               <div>
                 <b>#{o.id}</b>
-                <span className={`badge ${o.approved ? "APPROVE" : o.status}`}>
-                  {o.approved ? "APPROVE" : o.status}
+                <span
+                  className={`badge ${
+                    o.status === "CANCELLED"
+                      ? "CANCELLED"
+                      : o.approved
+                        ? "APPROVE"
+                        : o.status
+                  }`}
+                >
+                  {o.status === "CANCELLED"
+                    ? "CANCELLED"
+                    : o.approved
+                      ? "APPROVE"
+                      : o.status}
                 </span>
               </div>
               <small>{date(o.createdAt)}</small>
