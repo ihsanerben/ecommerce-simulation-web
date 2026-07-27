@@ -291,4 +291,34 @@ describe("page navigation", () => {
       screen.queryByRole("heading", { name: "Siparişin onaylandı" }),
     ).not.toBeInTheDocument();
   });
+
+  it("shows CANCELLED after cancelling an approved order", async () => {
+    const user = userEvent.setup();
+    let order = {
+      id: 43,
+      items: [{ id: 1, product: { name: "Kulaklık" }, quantity: 1 }],
+      totalAmount: 799,
+      status: "PENDING",
+      approved: true,
+      createdAt: "2026-07-21T12:00:00",
+    };
+    api.mockImplementation((path, options) => {
+      if (path === "/api/auth/me")
+        return Promise.resolve({ username: "ihsan", role: "USER" });
+      if (path === "/api/orders/43/cancel" && options?.method === "POST") {
+        order = { ...order, status: "CANCELLED" };
+        return Promise.resolve(order);
+      }
+      if (path === "/api/orders") return Promise.resolve([order]);
+      return Promise.resolve(null);
+    });
+    history.replaceState({}, "", "/orders");
+
+    render(<App />);
+    expect(await screen.findByText("APPROVE")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "İptal et" }));
+
+    expect(await screen.findByText("CANCELLED")).toBeInTheDocument();
+    expect(screen.queryByText("APPROVE")).not.toBeInTheDocument();
+  });
 });
