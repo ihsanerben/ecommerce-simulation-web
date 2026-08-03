@@ -1,5 +1,11 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../main";
@@ -28,6 +34,47 @@ beforeEach(() => {
 });
 
 describe("page navigation", () => {
+  it("counts down after login is rate limited", async () => {
+    const rateLimitError = Object.assign(
+      new Error("Çok fazla giriş denemesi."),
+      {
+        status: 429,
+        retryAfter: 60,
+      },
+    );
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/auth/login") return Promise.reject(rateLimitError);
+      return Promise.resolve(null);
+    });
+    history.replaceState({}, "", "/login");
+
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText("Kullanıcı adı"), {
+      target: { value: "ihsan" },
+    });
+    fireEvent.change(screen.getByLabelText("Parola"), {
+      target: { value: "wrong-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Devam et" }));
+
+    const retryButton = await screen.findByRole("button", {
+      name: "Tekrar dene (60 sn)",
+    });
+    expect(retryButton).toBeDisabled();
+  });
+
+  it("disables clear cart when the cart is empty", async () => {
+    mockUser();
+    history.replaceState({}, "", "/cart");
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole("button", { name: "Sepeti temizle" }),
+    ).toBeDisabled();
+  });
+
   it("does not mount a protected page before the session check finishes", async () => {
     let resolveMe;
     api.mockImplementation((path) =>
