@@ -58,6 +58,14 @@ function AuthForm({ mode, navigate, reloadUser, notify }) {
     password: "",
     newPassword: "",
   });
+  const [loginRetryAfter, setLoginRetryAfter] = useState(0);
+  useEffect(() => {
+    if (loginRetryAfter <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setLoginRetryAfter((remaining) => Math.max(0, remaining - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [loginRetryAfter]);
   const set = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const submit = async (e) => {
     e.preventDefault();
@@ -110,6 +118,9 @@ function AuthForm({ mode, navigate, reloadUser, notify }) {
         setTimeout(() => navigate("/login"), 1000);
       }
     } catch (err) {
+      if (mode === "login" && err.status === 429) {
+        setLoginRetryAfter(Math.max(1, err.retryAfter || 60));
+      }
       notify(err.message, "error");
     }
   };
@@ -163,7 +174,14 @@ function AuthForm({ mode, navigate, reloadUser, notify }) {
             required
           />
         )}
-        <button className="primary">Devam et</button>
+        <button
+          className="primary"
+          disabled={mode === "login" && loginRetryAfter > 0}
+        >
+          {mode === "login" && loginRetryAfter > 0
+            ? `Tekrar dene (${loginRetryAfter} sn)`
+            : "Devam et"}
+        </button>
       </form>
       <div className="form-links">
         <button onClick={() => navigate("/login")}>Giriş</button>
@@ -377,6 +395,7 @@ function Cart({ navigate, notify }) {
       actions={
         <button
           className="danger"
+          disabled={!cart.items.length}
           onClick={() =>
             act("/api/cart", { method: "DELETE" }, "Sepet temizlendi.")
           }
