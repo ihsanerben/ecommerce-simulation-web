@@ -10,10 +10,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../main";
 import { api } from "../api";
-import { connectLiveNotifications } from "../liveNotifications";
+import { connectLiveNotifications } from "../socketIoNotifications";
 
 vi.mock("../api", () => ({ api: vi.fn() }));
-vi.mock("../liveNotifications", () => ({
+vi.mock("../socketIoNotifications", () => ({
   connectLiveNotifications: vi.fn(() => () => {}),
 }));
 

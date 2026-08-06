@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
-import { connectLiveNotifications } from "./liveNotifications";
+import { connectLiveNotifications } from "./socketIoNotifications";
 import "./styles.css";
 import n11Logo from "../n11_photos/logo1.jpg";
 import n11Cover from "../n11_photos/Cover Banner 2.jpg";
