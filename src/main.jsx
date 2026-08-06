@@ -315,12 +315,16 @@ function Products({ user, navigate, notify }) {
   const [products, setProducts] = useState([]),
     [categories, setCategories] = useState([]),
     [meta, setMeta] = useState({ page: 0, totalPages: 1 });
-  const [filter, setFilter] = useState({ search: "", categoryId: "" }),
+  const [filter, setFilter] = useState({
+      search: "",
+      categoryId: "",
+      sort: "id,asc",
+    }),
     [detail, setDetail] = useState(null);
   const load = useCallback(
     async (page = 0) => {
       try {
-        const q = new URLSearchParams({ page, size: 10, sort: "id,asc" });
+        const q = new URLSearchParams({ page, size: 10, sort: filter.sort });
         if (filter.search) q.set("search", filter.search);
         if (filter.categoryId) q.set("categoryId", filter.categoryId);
         const d = await api(`/api/products?${q}`);
@@ -397,6 +401,17 @@ function Products({ user, navigate, notify }) {
                 {c.name}
               </option>
             ))}
+          </select>
+          <select
+            aria-label="Ürün sıralaması"
+            value={filter.sort}
+            onChange={(e) => setFilter({ ...filter, sort: e.target.value })}
+          >
+            <option value="id,asc">Varsayılan sıralama</option>
+            <option value="price,asc">Fiyat: düşükten yükseğe</option>
+            <option value="price,desc">Fiyat: yüksekten düşüğe</option>
+            <option value="name,asc">İsim: A-Z</option>
+            <option value="name,desc">İsim: Z-A</option>
           </select>
           <button onClick={() => load(0)}>Ara</button>
         </div>

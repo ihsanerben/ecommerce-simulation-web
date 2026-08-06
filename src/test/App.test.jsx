@@ -209,6 +209,32 @@ describe("page navigation", () => {
     );
   });
 
+  it("sorts products with the selected server-side ordering", async () => {
+    const user = userEvent.setup();
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products"))
+        return Promise.resolve({
+          content: [],
+          page: { number: 0, totalPages: 1 },
+        });
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Ürün sıralaması" }),
+      "price,desc",
+    );
+
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(
+        expect.stringMatching(/sort=price%2Cdesc/),
+      ),
+    );
+  });
+
   it("shows the product name in the add-to-cart notification", async () => {
     const user = userEvent.setup();
     const product = {
