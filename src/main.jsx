@@ -51,6 +51,108 @@ function Empty({ children }) {
   return <div className="empty-state">{children}</div>;
 }
 
+function Chatbot() {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: "welcome",
+      sender: "bot",
+      text: "Merhaba! Ürün, sepet, sipariş ve teslimat konularında yardımcı olabilirim.",
+    },
+  ]);
+
+  const sendMessage = async (event) => {
+    event.preventDefault();
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage || sending) return;
+
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      sender: "user",
+      text: trimmedMessage,
+    };
+    setMessages((currentMessages) => [...currentMessages, userMessage]);
+    setMessage("");
+    setSending(true);
+
+    try {
+      const response = await api("/api/chatbot/messages", {
+        method: "POST",
+        body: JSON.stringify({ message: trimmedMessage }),
+      });
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: `bot-${response.conversationId}`,
+          sender: "bot",
+          text: response.message,
+        },
+      ]);
+    } catch (error) {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: `error-${Date.now()}`,
+          sender: "bot",
+          text: error.message,
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <aside className="chatbot">
+      {open && (
+        <section className="chatbot-panel" aria-label="Yardım asistanı">
+          <header className="chatbot-head">
+            <div>
+              <strong>n11 Asistan</strong>
+              <small>Kafka destekli yardım</small>
+            </div>
+            <button aria-label="Asistanı kapat" onClick={() => setOpen(false)}>
+              ×
+            </button>
+          </header>
+          <div className="chatbot-messages" aria-live="polite">
+            {messages.map((chatMessage) => (
+              <p
+                className={`chatbot-message ${chatMessage.sender}`}
+                key={chatMessage.id}
+              >
+                {chatMessage.text}
+              </p>
+            ))}
+            {sending && <p className="chatbot-message bot">Yanıt yazılıyor…</p>}
+          </div>
+          <form className="chatbot-form" onSubmit={sendMessage}>
+            <input
+              aria-label="Mesajınız"
+              maxLength="500"
+              placeholder="Nasıl yardımcı olabilirim?"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+            />
+            <button className="primary" disabled={!message.trim() || sending}>
+              Gönder
+            </button>
+          </form>
+        </section>
+      )}
+      <button
+        className="chatbot-toggle"
+        aria-label={open ? "Asistanı kapat" : "Asistanı aç"}
+        onClick={() => setOpen((currentOpen) => !currentOpen)}
+      >
+        {open ? "×" : "?"}
+      </button>
+    </aside>
+  );
+}
+
 function AuthForm({ mode, navigate, reloadUser, notify }) {
   const [form, setForm] = useState({
     username: "",
@@ -1147,6 +1249,7 @@ export function App() {
         </div>
       </header>
       <main>{page}</main>
+      <Chatbot />
       <footer>
         <b>n11 · İhsan</b>
         <span>Sevgiyle tasarlandı · 2026</span>
