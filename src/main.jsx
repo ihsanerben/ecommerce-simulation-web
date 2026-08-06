@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
+import { connectLiveNotifications } from "./liveNotifications";
 import "./styles.css";
 import n11Logo from "../n11_photos/logo1.jpg";
 import n11Cover from "../n11_photos/Cover Banner 2.jpg";
@@ -1101,7 +1102,8 @@ export function App() {
   const [path, setPath] = useState(currentPath()),
     [user, setUser] = useState(null),
     [loading, setLoading] = useState(true),
-    [toast, setToast] = useState(null);
+    [toast, setToast] = useState(null),
+    [liveStatus, setLiveStatus] = useState("connecting");
   const notify = useCallback((text, type = "ok") => {
     setToast({ text, type });
     window.clearTimeout(window.__toastTimer);
@@ -1128,6 +1130,14 @@ export function App() {
   useEffect(() => {
     reloadUser();
   }, [reloadUser]);
+  useEffect(
+    () =>
+      connectLiveNotifications({
+        onNotification: (notification) => notify(notification.message),
+        onStatusChange: setLiveStatus,
+      }),
+    [notify],
+  );
   const protectedPage = ["/cart", "/orders", "/account"].includes(path);
   let page;
   if (loading) page = <Empty>Oturum kontrol ediliyor…</Empty>;
@@ -1231,6 +1241,16 @@ export function App() {
           )}
         </nav>
         <div className="session">
+          <span
+            className={`live-status ${liveStatus}`}
+            title={
+              liveStatus === "connected"
+                ? "Canlı bildirimler bağlı"
+                : "Canlı bildirimler bağlanıyor"
+            }
+          >
+            <i /> Canlı
+          </span>
           {user ? (
             <>
               <button

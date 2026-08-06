@@ -107,6 +107,25 @@ nav button {
   font-size: 13px;
   color: #766c80;
 }
+
+.live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #766d7d;
+}
+
+.live-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f2a900;
+}
+
+.live-status.connected i {
+  background: #20a464;
+}
 main {
   width: min(1180px, calc(100% - 32px));
   min-height: calc(100vh - 128px);

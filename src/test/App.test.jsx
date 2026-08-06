@@ -10,8 +10,12 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../main";
 import { api } from "../api";
+import { connectLiveNotifications } from "../liveNotifications";
 
 vi.mock("../api", () => ({ api: vi.fn() }));
+vi.mock("../liveNotifications", () => ({
+  connectLiveNotifications: vi.fn(() => () => {}),
+}));
 
 const page = { content: [], page: { number: 0, totalPages: 0 } };
 const emptyCart = { id: 1, items: [], totalPrice: 0 };
@@ -31,9 +35,26 @@ function mockUser(role = "USER") {
 beforeEach(() => {
   history.replaceState({}, "", "/products");
   api.mockReset();
+  connectLiveNotifications.mockClear();
 });
 
 describe("page navigation", () => {
+  it("shows notifications received over the live WebSocket connection", async () => {
+    mockUser();
+    render(<App />);
+    const connection = connectLiveNotifications.mock.calls[0][0];
+
+    act(() => {
+      connection.onStatusChange("connected");
+      connection.onNotification({ message: "Yeni bir sipariş oluşturuldu." });
+    });
+
+    expect(screen.getByTitle("Canlı bildirimler bağlı")).toBeInTheDocument();
+    expect(
+      screen.getByText("Yeni bir sipariş oluşturuldu."),
+    ).toBeInTheDocument();
+  });
+
   it("sends a chatbot message and displays the Kafka-backed response", async () => {
     const user = userEvent.setup();
     api.mockImplementation((path) => {
