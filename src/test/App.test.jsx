@@ -85,6 +85,38 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
+  it("sends a chatbot quick reply through the same Kafka-backed endpoint", async () => {
+    const user = userEvent.setup();
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products")) return Promise.resolve(page);
+      if (path === "/api/chatbot/messages")
+        return Promise.resolve({
+          conversationId: "conversation-quick-reply",
+          message: "Sepet ekranından sipariş oluşturabilirsiniz.",
+        });
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Asistanı aç" }));
+    await user.click(
+      screen.getByRole("button", { name: "🛒 Sepet & Satın Alma" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Sepete nasıl ürün eklerim?" }),
+    );
+
+    expect(api).toHaveBeenCalledWith("/api/chatbot/messages", {
+      method: "POST",
+      body: JSON.stringify({ message: "Sepete nasıl ürün eklerim?" }),
+    });
+    expect(
+      await screen.findByText("Sepet ekranından sipariş oluşturabilirsiniz."),
+    ).toBeInTheDocument();
+  });
+
   it("counts down after login is rate limited", async () => {
     const rateLimitError = Object.assign(
       new Error("Çok fazla giriş denemesi."),

@@ -52,6 +52,49 @@ function Empty({ children }) {
   return <div className="empty-state">{children}</div>;
 }
 
+const CHATBOT_TOPICS = [
+  {
+    label: "🛍️ Sipariş İşlemlerim",
+    options: [
+      "Kargomu nasıl takip ederim?",
+      "Teslimat ne zaman yapılır?",
+      "Siparişimi nasıl iptal ederim?",
+    ],
+  },
+  {
+    label: "🔄 İade & İptaller",
+    options: [
+      "İade işlemi nasıl yapılır?",
+      "Siparişimi iptal etmek istiyorum",
+      "İade süreci ne durumda?",
+    ],
+  },
+  {
+    label: "📦 Ürün & Teslimat Sorunları",
+    options: [
+      "İade: Ürünüm eksik geldi",
+      "İade: Yanlış ürün geldi",
+      "İade: Ürünüm hasarlı geldi",
+    ],
+  },
+  {
+    label: "🛒 Sepet & Satın Alma",
+    options: [
+      "Sepete nasıl ürün eklerim?",
+      "Nasıl satın alabilirim?",
+      "Sepetimdeki ürünleri nasıl yönetirim?",
+    ],
+  },
+  {
+    label: "👤 Üyelik & Hesap İşlemlerim",
+    options: [
+      "Parolamı unuttum",
+      "Giriş yapamıyorum",
+      "Merhaba, neler yapabilirsin?",
+    ],
+  },
+];
+
 function Chatbot() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -60,13 +103,32 @@ function Chatbot() {
     {
       id: "welcome",
       sender: "bot",
-      text: "Merhaba! Ürün, sepet, sipariş ve teslimat konularında yardımcı olabilirim.",
+      text: "n11 Asistan'a hoş geldiniz 👋 Size hangi konuda yardımcı olabilirim? Bir konu seçebilir veya mesajınızı yazabilirsiniz.",
+      options: CHATBOT_TOPICS,
     },
   ]);
 
-  const sendMessage = async (event) => {
-    event.preventDefault();
-    const trimmedMessage = message.trim();
+  const selectTopic = (topic) => {
+    if (sending) return;
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `user-topic-${Date.now()}`,
+        sender: "user",
+        text: topic.label,
+      },
+      {
+        id: `bot-topic-${Date.now()}`,
+        sender: "bot",
+        text: `${topic.label}\nAşağıdaki işlemlerden birini seçebilirsiniz:`,
+        options: topic.options,
+      },
+    ]);
+  };
+
+  const submitMessage = async (messageText) => {
+    const trimmedMessage = messageText.trim();
     if (!trimmedMessage || sending) return;
 
     const userMessage = {
@@ -105,6 +167,11 @@ function Chatbot() {
     }
   };
 
+  const sendMessage = (event) => {
+    event.preventDefault();
+    submitMessage(message);
+  };
+
   return (
     <aside className="chatbot">
       {open && (
@@ -120,14 +187,52 @@ function Chatbot() {
           </header>
           <div className="chatbot-messages" aria-live="polite">
             {messages.map((chatMessage) => (
-              <p
-                className={`chatbot-message ${chatMessage.sender}`}
+              <div
+                className={`chatbot-message-row ${chatMessage.sender}`}
                 key={chatMessage.id}
               >
-                {chatMessage.text}
-              </p>
+                {chatMessage.sender === "bot" && (
+                  <span className="chatbot-avatar" aria-hidden="true">
+                    n11
+                  </span>
+                )}
+                <div className="chatbot-message">
+                  <p>{chatMessage.text}</p>
+                  {chatMessage.options && (
+                    <div className="chatbot-options">
+                      {chatMessage.options.map((option) => {
+                        const optionLabel =
+                          typeof option === "string" ? option : option.label;
+                        return (
+                          <button
+                            type="button"
+                            key={optionLabel}
+                            disabled={sending}
+                            onClick={() =>
+                              typeof option === "string"
+                                ? submitMessage(option)
+                                : selectTopic(option)
+                            }
+                          >
+                            {optionLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
-            {sending && <p className="chatbot-message bot">Yanıt yazılıyor…</p>}
+            {sending && (
+              <div className="chatbot-message-row bot">
+                <span className="chatbot-avatar" aria-hidden="true">
+                  n11
+                </span>
+                <div className="chatbot-message">
+                  <p>Yanıt yazılıyor…</p>
+                </div>
+              </div>
+            )}
           </div>
           <form className="chatbot-form" onSubmit={sendMessage}>
             <input
@@ -148,7 +253,8 @@ function Chatbot() {
         aria-label={open ? "Asistanı kapat" : "Asistanı aç"}
         onClick={() => setOpen((currentOpen) => !currentOpen)}
       >
-        {open ? "×" : "?"}
+        <span aria-hidden="true">{open ? "×" : "💬"}</span>
+        {open ? "Asistanı Kapat" : "n11 Asistan"}
       </button>
     </aside>
   );
