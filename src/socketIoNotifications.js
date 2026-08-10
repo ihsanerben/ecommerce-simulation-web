@@ -6,7 +6,7 @@ const API_URL =
 
 export function socketIOServerUrl(apiUrl = API_URL) {
   const url = new URL(apiUrl, window.location.origin);
-  if (!import.meta.env.PROD) url.port = "9092";
+  if (!import.meta.env.PROD) url.port = "9094";
   url.pathname = "";
   url.search = "";
   return url.origin;
