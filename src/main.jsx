@@ -179,7 +179,7 @@ function Chatbot() {
           <header className="chatbot-head">
             <div>
               <strong>n11 Asistan</strong>
-              <small>Kafka destekli yardım</small>
+              <small>Hızlı yardım</small>
             </div>
             <button aria-label="Asistanı kapat" onClick={() => setOpen(false)}>
               ×
