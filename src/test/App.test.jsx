@@ -55,7 +55,7 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
-  it("sends a chatbot message and displays the Kafka-backed response", async () => {
+  it("sends a chatbot message and displays the response", async () => {
     const user = userEvent.setup();
     api.mockImplementation((path) => {
       if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
@@ -85,7 +85,7 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
-  it("sends a chatbot quick reply through the same Kafka-backed endpoint", async () => {
+  it("sends a chatbot quick reply through the same endpoint", async () => {
     const user = userEvent.setup();
     api.mockImplementation((path) => {
       if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
