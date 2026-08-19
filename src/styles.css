@@ -569,6 +569,25 @@ footer {
   color: #7b167f;
 }
 
+.chatbot-main-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 5px 10px;
+  border: 1px solid #d8c8df;
+  border-radius: 999px;
+  background: #faf6fc;
+  color: #7b167f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chatbot-main-menu:hover:not(:disabled) {
+  border-color: #a020d1;
+  background: #fff0fc;
+}
+
 .chatbot-form {
   padding: 12px;
   display: grid;
@@ -1063,6 +1082,22 @@ main {
   font-weight: 700;
 }
 
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-numbers button.active {
+  border-color: var(--pink);
+  background: var(--pink);
+  color: #fff;
+}
+
+.pager .total-pages {
+  min-width: auto;
+}
+
 .account-layout {
   width: min(820px, 100%);
   margin-inline: auto;
@@ -1505,6 +1540,15 @@ img {
   .pager button {
     flex: 1;
     padding-inline: 8px;
+  }
+
+  .page-numbers {
+    flex: 2;
+    justify-content: center;
+  }
+
+  .page-numbers button {
+    flex: 0 1 auto;
   }
 
   .list {

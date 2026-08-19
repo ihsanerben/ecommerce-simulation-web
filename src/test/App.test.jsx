@@ -96,6 +96,36 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
+  it("returns to the chatbot main menu and keeps the latest content visible", async () => {
+    const user = userEvent.setup();
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products")) return Promise.resolve(page);
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Asistanı aç" }));
+
+    const messages = document.querySelector(".chatbot-messages");
+    Object.defineProperty(messages, "scrollHeight", {
+      configurable: true,
+      value: 600,
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: "🛒 Sepet & Satın Alma" }),
+    );
+    const mainMenuButtons = screen.getAllByRole("button", {
+      name: "Ana menü",
+    });
+    await user.click(mainMenuButtons.at(-1));
+
+    expect(screen.getAllByText("🛒 Sepet & Satın Alma")).toHaveLength(3);
+    expect(messages.scrollTop).toBe(600);
+  });
+
   it("counts down after login is rate limited", async () => {
     const rateLimitError = Object.assign(
       new Error("Çok fazla giriş denemesi."),
@@ -217,7 +247,7 @@ describe("page navigation", () => {
     ).toBeInTheDocument();
   });
 
-  it("loads at most ten products per page and requests the next page", async () => {
+  it("loads at most ten products per page and requests a numbered page", async () => {
     const user = userEvent.setup();
     api.mockImplementation((path) => {
       if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
@@ -235,13 +265,53 @@ describe("page navigation", () => {
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith(expect.stringMatching(/size=10/)),
     );
-    await user.click(screen.getByRole("button", { name: "Sonraki" }));
+    await user.click(screen.getByRole("button", { name: "2. sayfaya git" }));
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith(expect.stringMatching(/page=1/)),
     );
   });
 
-  it("sorts products with the selected server-side ordering", async () => {
+  it("shows two pages before and after the current page", async () => {
+    const user = userEvent.setup();
+    api.mockImplementation((path) => {
+      if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
+      if (path === "/api/categories") return Promise.resolve([]);
+      if (path.startsWith("/api/products"))
+        return Promise.resolve({
+          content: [],
+          page: {
+            number: path.includes("page=4")
+              ? 4
+              : path.includes("page=2")
+                ? 2
+                : 0,
+            totalPages: 10,
+          },
+        });
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    await user.click(
+      await screen.findByRole("button", { name: "3. sayfaya git" }),
+    );
+
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(expect.stringMatching(/page=2/)),
+    );
+
+    api.mockClear();
+    await user.click(screen.getByRole("button", { name: "5. sayfaya git" }));
+    await screen.findByRole("button", { name: "5. sayfa, mevcut sayfa" });
+
+    expect(screen.getByRole("button", { name: "3. sayfaya git" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "4. sayfaya git" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "6. sayfaya git" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "7. sayfaya git" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Toplam 10 sayfa")).toHaveTextContent("/ 10");
+  });
+
+  it("applies product filters only after the search button is clicked", async () => {
     const user = userEvent.setup();
     api.mockImplementation((path) => {
       if (path === "/api/auth/me") return Promise.reject(new Error("Guest"));
@@ -255,14 +325,26 @@ describe("page navigation", () => {
     });
 
     render(<App />);
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(expect.stringMatching(/sort=id%2Casc/)),
+    );
+    api.mockClear();
+
     await user.selectOptions(
       await screen.findByRole("combobox", { name: "Ürün sıralaması" }),
       "price,desc",
     );
+    await user.type(screen.getByPlaceholderText("Ürün ara"), "telefon");
+
+    expect(api).not.toHaveBeenCalledWith(expect.stringMatching(/products/));
+
+    await user.click(screen.getByRole("button", { name: "Ara" }));
 
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith(
-        expect.stringMatching(/sort=price%2Cdesc/),
+        expect.stringMatching(
+          /page=0&size=10&sort=price%2Cdesc&search=telefon/,
+        ),
       ),
     );
   });
