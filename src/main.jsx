@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import "./styles.css";
@@ -94,7 +94,11 @@ const CHATBOT_TOPICS = [
   },
 ];
 
+const CHATBOT_WELCOME_MESSAGE =
+  "n11 Asistan'a hoş geldiniz 👋 Size hangi konuda yardımcı olabilirim? Bir konu seçebilir veya mesajınızı yazabilirsiniz.";
+
 function Chatbot() {
+  const messagesContainerRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -102,10 +106,29 @@ function Chatbot() {
     {
       id: "welcome",
       sender: "bot",
-      text: "n11 Asistan'a hoş geldiniz 👋 Size hangi konuda yardımcı olabilirim? Bir konu seçebilir veya mesajınızı yazabilirsiniz.",
+      text: CHATBOT_WELCOME_MESSAGE,
       options: CHATBOT_TOPICS,
     },
   ]);
+
+  useEffect(() => {
+    if (!open || !messagesContainerRef.current) return;
+
+    messagesContainerRef.current.scrollTop =
+      messagesContainerRef.current.scrollHeight;
+  }, [messages, open, sending]);
+
+  const showMainMenu = () => {
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `main-menu-${Date.now()}`,
+        sender: "bot",
+        text: CHATBOT_WELCOME_MESSAGE,
+        options: CHATBOT_TOPICS,
+      },
+    ]);
+  };
 
   const selectTopic = (topic) => {
     if (sending) return;
@@ -184,7 +207,11 @@ function Chatbot() {
               ×
             </button>
           </header>
-          <div className="chatbot-messages" aria-live="polite">
+          <div
+            className="chatbot-messages"
+            aria-live="polite"
+            ref={messagesContainerRef}
+          >
             {messages.map((chatMessage) => (
               <div
                 className={`chatbot-message-row ${chatMessage.sender}`}
@@ -218,6 +245,16 @@ function Chatbot() {
                         );
                       })}
                     </div>
+                  )}
+                  {chatMessage.sender === "bot" && (
+                    <button
+                      type="button"
+                      className="chatbot-main-menu"
+                      disabled={sending}
+                      onClick={showMainMenu}
+                    >
+                      Ana menü
+                    </button>
                   )}
                 </div>
               </div>
@@ -426,13 +463,24 @@ function Products({ user, navigate, notify }) {
       categoryId: "",
       sort: "id,asc",
     }),
+    [appliedFilter, setAppliedFilter] = useState({
+      search: "",
+      categoryId: "",
+      sort: "id,asc",
+    }),
     [detail, setDetail] = useState(null);
   const load = useCallback(
     async (page = 0) => {
       try {
-        const q = new URLSearchParams({ page, size: 10, sort: filter.sort });
-        if (filter.search) q.set("search", filter.search);
-        if (filter.categoryId) q.set("categoryId", filter.categoryId);
+        const q = new URLSearchParams({
+          page,
+          size: 10,
+          sort: appliedFilter.sort,
+        });
+        if (appliedFilter.search) q.set("search", appliedFilter.search);
+        if (appliedFilter.categoryId) {
+          q.set("categoryId", appliedFilter.categoryId);
+        }
         const d = await api(`/api/products?${q}`);
         setProducts(d.content || []);
         setMeta({
@@ -443,14 +491,26 @@ function Products({ user, navigate, notify }) {
         notify(e.message, "error");
       }
     },
-    [filter],
+    [appliedFilter, notify],
   );
   useEffect(() => {
     api("/api/categories")
       .then(setCategories)
       .catch((e) => notify(e.message, "error"));
-    load();
+  }, [notify]);
+  useEffect(() => {
+    load(0);
   }, [load]);
+
+  const applyFilters = () => {
+    setAppliedFilter({ ...filter });
+  };
+  const firstVisiblePage = Math.max(0, meta.page - 2);
+  const lastVisiblePage = Math.min(meta.totalPages - 1, meta.page + 2);
+  const visiblePages = Array.from(
+    { length: Math.max(0, lastVisiblePage - firstVisiblePage + 1) },
+    (_, index) => firstVisiblePage + index,
+  );
   const add = async (product) => {
     if (!user) {
       notify("Sepete ürün eklemek için giriş yapmalısınız.", "danger");
@@ -519,7 +579,7 @@ function Products({ user, navigate, notify }) {
             <option value="name,asc">İsim: A-Z</option>
             <option value="name,desc">İsim: Z-A</option>
           </select>
-          <button onClick={() => load(0)}>Ara</button>
+          <button onClick={applyFilters}>Ara</button>
         </div>
         <div className="product-grid">
           {products.map((p) => (
@@ -552,18 +612,27 @@ function Products({ user, navigate, notify }) {
           ))}
         </div>
         <div className="pager">
-          <button disabled={!meta.page} onClick={() => load(meta.page - 1)}>
-            Önceki
-          </button>
-          <span>
-            {meta.page + 1} / {Math.max(meta.totalPages, 1)}
+          <div className="page-numbers" aria-label="Ürün sayfaları">
+            {visiblePages.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === meta.page ? "active" : ""}
+                aria-current={pageNumber === meta.page ? "page" : undefined}
+                aria-label={
+                  pageNumber === meta.page
+                    ? `${pageNumber + 1}. sayfa, mevcut sayfa`
+                    : `${pageNumber + 1}. sayfaya git`
+                }
+                onClick={() => load(pageNumber)}
+              >
+                {pageNumber + 1}
+              </button>
+            ))}
+          </div>
+          <span className="total-pages" aria-label={`Toplam ${meta.totalPages} sayfa`}>
+            / {meta.totalPages}
           </span>
-          <button
-            disabled={meta.page + 1 >= meta.totalPages}
-            onClick={() => load(meta.page + 1)}
-          >
-            Sonraki
-          </button>
         </div>
       </Panel>
       {detail && (
