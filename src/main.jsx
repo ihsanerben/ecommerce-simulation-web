@@ -5,6 +5,12 @@ import "./styles.css";
 import n11Logo from "../n11_photos/logo1.jpg";
 import n11Cover from "../n11_photos/Cover Banner 2.jpg";
 
+const DEFAULT_UI_CONFIG = {
+  logoUrl: "",
+  primaryColor: "#f24391",
+  supportUrl: "https://www.n11.com/destek-merkezi",
+};
+
 const money = (v) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(
     v || 0,
@@ -630,7 +636,10 @@ function Products({ user, navigate, notify }) {
               </button>
             ))}
           </div>
-          <span className="total-pages" aria-label={`Toplam ${meta.totalPages} sayfa`}>
+          <span
+            className="total-pages"
+            aria-label={`Toplam ${meta.totalPages} sayfa`}
+          >
             / {meta.totalPages}
           </span>
         </div>
@@ -1272,7 +1281,7 @@ function Admin({ notify }) {
   );
 }
 
-export function App() {
+export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
   const [path, setPath] = useState(currentPath()),
     [user, setUser] = useState(null),
     [loading, setLoading] = useState(true),
@@ -1370,7 +1379,11 @@ export function App() {
       )}
       <header>
         <button className="brand" onClick={() => navigate("/products")}>
-          <img className="brand-logo" src={n11Logo} alt="n11" />
+          <img
+            className="brand-logo"
+            src={uiConfig.logoUrl || n11Logo}
+            alt="n11"
+          />
           <span>by İhsan</span>
         </button>
         <nav>
@@ -1443,9 +1456,23 @@ export function App() {
       <footer>
         <b>n11 · İhsan</b>
         <span>Sevgiyle tasarlandı · 2026</span>
+        <a href={uiConfig.supportUrl} target="_blank" rel="noreferrer">
+          Destek
+        </a>
       </footer>
     </div>
   );
 }
 const root = document.getElementById("root");
-if (root) createRoot(root).render(<App />);
+if (root) {
+  api("/api/public/config")
+    .catch(() => DEFAULT_UI_CONFIG)
+    .then((config) => {
+      const uiConfig = { ...DEFAULT_UI_CONFIG, ...config };
+      document.documentElement.style.setProperty(
+        "--primary-color",
+        uiConfig.primaryColor,
+      );
+      createRoot(root).render(<App uiConfig={uiConfig} />);
+    });
+}

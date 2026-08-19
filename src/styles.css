@@ -4,6 +4,7 @@
   color: #282032;
   background: #f7f5fa;
   font-synthesis: none;
+  --primary-color: #f24391;
 }
 * {
   box-sizing: border-box;
@@ -666,11 +667,11 @@ button:hover {
   background: #fff0f7;
 }
 .primary {
-  background: linear-gradient(135deg, #f24391, #c91f6d);
+  background: var(--primary-color);
   box-shadow: 0 8px 20px #d82d7830;
 }
 .primary:hover {
-  background: #d72c78;
+  background: color-mix(in srgb, var(--primary-color), #000 12%);
 }
 .brand b {
   color: #e32e7d;
