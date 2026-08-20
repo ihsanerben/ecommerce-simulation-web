@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
+import { SupportMessaging } from "./SupportMessaging";
 import "./styles.css";
 import n11Logo from "../n11_photos/logo1.jpg";
 import n11Cover from "../n11_photos/Cover Banner 2.jpg";
@@ -21,6 +22,7 @@ const paths = [
   "/cart",
   "/orders",
   "/account",
+  "/support",
   "/admin",
   "/login",
   "/register",
@@ -1312,7 +1314,9 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
   useEffect(() => {
     reloadUser();
   }, [reloadUser]);
-  const protectedPage = ["/cart", "/orders", "/account"].includes(path);
+  const protectedPage = ["/cart", "/orders", "/account", "/support"].includes(
+    path,
+  );
   let page;
   if (loading) page = <Empty>Oturum kontrol ediliyor…</Empty>;
   else if (protectedPage && !user)
@@ -1337,6 +1341,8 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
           navigate={navigate}
           notify={notify}
         />
+      ) : path === "/support" ? (
+        <SupportMessaging user={user} notify={notify} />
       ) : path === "/admin" ? (
         user?.role === "ADMIN" ? (
           <Admin notify={notify} />
@@ -1406,6 +1412,12 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
                 onClick={() => navigate("/orders")}
               >
                 Siparişler
+              </button>
+              <button
+                className={path === "/support" ? "active" : ""}
+                onClick={() => navigate("/support")}
+              >
+                Canlı destek
               </button>
             </>
           )}
