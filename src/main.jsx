@@ -331,9 +331,9 @@ function AuthForm({ mode, navigate, reloadUser, notify }) {
             password: form.password,
           }),
         });
-        await reloadUser();
+        const currentUser = await reloadUser();
         notify(`Hoş geldin ${form.username}! Giriş başarılı.`);
-        navigate("/products");
+        navigate(currentUser?.role === "ADMIN" ? "/admin" : "/products");
       }
       if (mode === "register") {
         await api("/api/auth/register", {
@@ -1304,9 +1304,12 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
   }, []);
   const reloadUser = useCallback(async () => {
     try {
-      setUser(await api("/api/auth/me"));
+      const currentUser = await api("/api/auth/me");
+      setUser(currentUser);
+      return currentUser;
     } catch {
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -1317,6 +1320,8 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
   const protectedPage = ["/cart", "/orders", "/account", "/support"].includes(
     path,
   );
+  const adminCustomerPage =
+    user?.role === "ADMIN" && ["/products", "/cart", "/orders"].includes(path);
   let page;
   if (loading) page = <Empty>Oturum kontrol ediliyor…</Empty>;
   else if (protectedPage && !user)
@@ -1326,6 +1331,8 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
         <button onClick={() => navigate("/login")}>Giriş yap</button>
       </Empty>
     );
+  else if (adminCustomerPage)
+    page = <Empty>Admin hesabıyla bu müşteri alanı kullanılamaz.</Empty>;
   else
     page =
       path === "/products" ? (
@@ -1384,7 +1391,12 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
         </div>
       )}
       <header>
-        <button className="brand" onClick={() => navigate("/products")}>
+        <button
+          className="brand"
+          onClick={() =>
+            navigate(user?.role === "ADMIN" ? "/admin" : "/products")
+          }
+        >
           <img
             className="brand-logo"
             src={uiConfig.logoUrl || n11Logo}
@@ -1393,13 +1405,15 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
           <span>by İhsan</span>
         </button>
         <nav>
-          <button
-            className={path === "/products" ? "active" : ""}
-            onClick={() => navigate("/products")}
-          >
-            Ürünler
-          </button>
-          {user && (
+          {user?.role !== "ADMIN" && (
+            <button
+              className={path === "/products" ? "active" : ""}
+              onClick={() => navigate("/products")}
+            >
+              Ürünler
+            </button>
+          )}
+          {user && user.role !== "ADMIN" && (
             <>
               <button
                 className={path === "/cart" ? "active" : ""}
@@ -1413,13 +1427,15 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
               >
                 Siparişler
               </button>
-              <button
-                className={path === "/support" ? "active" : ""}
-                onClick={() => navigate("/support")}
-              >
-                Canlı destek
-              </button>
             </>
+          )}
+          {user && (
+            <button
+              className={path === "/support" ? "active" : ""}
+              onClick={() => navigate("/support")}
+            >
+              Canlı destek
+            </button>
           )}
           {user?.role === "ADMIN" && (
             <button
@@ -1464,7 +1480,7 @@ export function App({ uiConfig = DEFAULT_UI_CONFIG }) {
         </div>
       </header>
       <main>{page}</main>
-      <Chatbot />
+      {user?.role !== "ADMIN" && <Chatbot />}
       <footer>
         <b>n11 · İhsan</b>
         <span>Sevgiyle tasarlandı · 2026</span>

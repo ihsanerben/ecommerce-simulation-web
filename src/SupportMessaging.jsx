@@ -126,7 +126,8 @@ export function SupportMessaging({ user, notify }) {
 
   const canSend =
     selected &&
-    selected.status !== "CLOSED" &&
+    selected.status === "OPEN" &&
+    selected.agentId &&
     (user.role === "USER" || selected.agentUsername === user.username);
 
   return (
@@ -220,6 +221,14 @@ export function SupportMessaging({ user, notify }) {
                   Gönder
                 </button>
               </form>
+            ) : user.role === "USER" ? (
+              <div className="support-send">
+                <button className="primary" disabled>
+                  {selected.status === "CLOSED"
+                    ? "Bu görüşme kapatıldı"
+                    : "Henüz görüşmeye admin atanmadı"}
+                </button>
+              </div>
             ) : (
               <p className="support-waiting">
                 {selected.status === "CLOSED"
