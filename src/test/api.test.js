@@ -65,4 +65,78 @@ describe("api client", () => {
       retryAfter: 60,
     });
   });
+
+  it("refreshes an expired session and retries the original request once", async () => {
+    let protectedRequestCount = 0;
+    fetch.mockImplementation(async (url) => {
+      if (url.endsWith("/api/auth/csrf")) {
+        document.cookie = "ECOMMERCE-XSRF-TOKEN=csrf-value";
+        return { ok: true, status: 200, headers: { get: () => "" } };
+      }
+      if (url.endsWith("/api/auth/refresh")) {
+        return { ok: true, status: 200, headers: { get: () => "" } };
+      }
+      protectedRequestCount += 1;
+      return protectedRequestCount === 1
+        ? {
+            ok: false,
+            status: 401,
+            headers: { get: () => "application/json" },
+            json: async () => ({ message: "Authentication is required." }),
+          }
+        : {
+            ok: true,
+            status: 200,
+            headers: { get: () => "application/json" },
+            json: async () => ({ content: ["conversation"] }),
+          };
+    });
+
+    await expect(api("/api/support/conversations")).resolves.toEqual({
+      content: ["conversation"],
+    });
+    expect(protectedRequestCount).toBe(2);
+    expect(fetch).toHaveBeenCalledWith(
+      "http://localhost:8080/api/auth/refresh",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-value" }),
+      }),
+    );
+  });
+
+  it("uses one refresh request when concurrent requests receive 401", async () => {
+    let refreshCount = 0;
+    const attempts = new Map();
+    fetch.mockImplementation(async (url) => {
+      if (url.endsWith("/api/auth/csrf")) {
+        document.cookie = "ECOMMERCE-XSRF-TOKEN=csrf-value";
+        return { ok: true, status: 200, headers: { get: () => "" } };
+      }
+      if (url.endsWith("/api/auth/refresh")) {
+        refreshCount += 1;
+        return { ok: true, status: 200, headers: { get: () => "" } };
+      }
+      const attempt = (attempts.get(url) || 0) + 1;
+      attempts.set(url, attempt);
+      return attempt === 1
+        ? {
+            ok: false,
+            status: 401,
+            headers: { get: () => "application/json" },
+            json: async () => ({ message: "Authentication is required." }),
+          }
+        : {
+            ok: true,
+            status: 200,
+            headers: { get: () => "application/json" },
+            json: async () => ({ ok: true }),
+          };
+    });
+
+    await Promise.all([api("/api/orders"), api("/api/support/conversations")]);
+
+    expect(refreshCount).toBe(1);
+  });
 });

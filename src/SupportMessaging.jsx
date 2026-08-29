@@ -51,6 +51,25 @@ export function SupportMessaging({ user, notify }) {
       reconnectDelay: 3000,
       onConnect: () => {
         setConnected(true);
+        const receiveConversationEvent = (frame) => {
+          const event = JSON.parse(frame.body);
+          const updatedConversation = event.conversation;
+          setConversations((current) => {
+            const exists = current.some(
+              (conversation) => conversation.id === updatedConversation.id,
+            );
+            return exists
+              ? current.map((conversation) =>
+                  conversation.id === updatedConversation.id
+                    ? updatedConversation
+                    : conversation,
+                )
+              : [updatedConversation, ...current];
+          });
+          if (selectedIdRef.current === updatedConversation.id) {
+            setSelected(updatedConversation);
+          }
+        };
         client.subscribe("/user/queue/support", (frame) => {
           const incomingMessage = JSON.parse(frame.body);
           setMessages((current) =>
@@ -60,6 +79,10 @@ export function SupportMessaging({ user, notify }) {
           );
           loadConversations();
         });
+        client.subscribe(
+          "/user/queue/support/conversations",
+          receiveConversationEvent,
+        );
       },
       onDisconnect: () => setConnected(false),
       onWebSocketClose: () => setConnected(false),
